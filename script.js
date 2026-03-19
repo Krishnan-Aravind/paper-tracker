@@ -76,16 +76,23 @@ function buildUserCard(name, dateCountMap) {
   return card;
 }
 
-function centerOnToday(card) {
+function anchorCurrentWeekRight(card) {
   const scrollEl = card.querySelector(".heatmap-scroll");
   const todayCell = card.querySelector(".cell.today");
   if (!scrollEl || !todayCell) {
     return;
   }
 
+  const maxScroll = Math.max(0, scrollEl.scrollWidth - scrollEl.clientWidth);
   const target =
-    todayCell.offsetLeft - scrollEl.clientWidth / 2 + todayCell.clientWidth / 2;
-  scrollEl.scrollLeft = Math.max(0, target);
+    todayCell.offsetLeft - (scrollEl.clientWidth - todayCell.clientWidth);
+
+  if (!Number.isFinite(target)) {
+    scrollEl.scrollLeft = maxScroll;
+    return;
+  }
+
+  scrollEl.scrollLeft = Math.max(0, Math.min(maxScroll, target));
 }
 
 function renderAllUsers() {
@@ -95,12 +102,14 @@ function renderAllUsers() {
     els.usersGrid.appendChild(buildUserCard(name, map));
   }
 
-  // Wait until cards are in the DOM and measured, then center on today's cell.
+  // Wait until cards are mounted and layout is stable before anchoring.
   requestAnimationFrame(() => {
-    const cards = els.usersGrid.querySelectorAll(".user-card");
-    for (const card of cards) {
-      centerOnToday(card);
-    }
+    requestAnimationFrame(() => {
+      const cards = els.usersGrid.querySelectorAll(".user-card");
+      for (const card of cards) {
+        anchorCurrentWeekRight(card);
+      }
+    });
   });
 }
 
