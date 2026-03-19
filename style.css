@@ -16,11 +16,6 @@ body {
   font-size: 1.8rem;
 }
 
-.subtitle {
-  margin: 0.4rem 0 0;
-  color: #475569;
-}
-
 .card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -69,20 +64,6 @@ button:disabled {
   opacity: 0.7;
 }
 
-h2 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.legend {
-  margin: 0.6rem 0 1rem;
-  display: inline-flex;
-  gap: 0.35rem;
-  align-items: center;
-  color: #475569;
-  font-size: 0.8rem;
-}
-
 .grid {
   display: grid;
   grid-template-columns: repeat(53, 12px);
@@ -102,6 +83,10 @@ h2 {
 .user-card {
   display: grid;
   gap: 0.8rem;
+  --level0: #e2e8f0;
+  --level1: #bfdbfe;
+  --level2: #60a5fa;
+  --level3: #2563eb;
 }
 
 .user-card-header {
@@ -127,27 +112,61 @@ h2 {
   gap: 1rem;
 }
 
+.heatmap-shell {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 0.45rem;
+  align-items: start;
+}
+
+.weekday-col {
+  margin-top: 15px;
+  height: calc(7 * 12px + 6 * 3px);
+  color: #64748b;
+  font-size: 0.72rem;
+  display: grid;
+  align-content: space-around;
+}
+
+.heatmap-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.month-row {
+  display: grid;
+  grid-template-columns: repeat(53, 12px);
+  gap: 3px;
+  color: #64748b;
+  font-size: 0.7rem;
+  margin-bottom: 4px;
+}
+
+.month-cell {
+  white-space: nowrap;
+}
+
 .cell {
   width: 12px;
   height: 12px;
   border-radius: 2px;
-  background: #e2e8f0;
+  background: var(--level0);
 }
 
 .cell.level0 {
-  background: #e2e8f0;
+  background: var(--level0);
 }
 
 .cell.level1 {
-  background: #bbf7d0;
+  background: var(--level1);
 }
 
 .cell.level2 {
-  background: #4ade80;
+  background: var(--level2);
 }
 
 .cell.level3 {
-  background: #16a34a;
+  background: var(--level3);
 }
 
 .cell.today {
@@ -160,4 +179,25 @@ h2 {
   min-height: 1.2rem;
   color: #334155;
   font-size: 0.9rem;
+}
+
+.user-andreas {
+  --level0: #e2e8f0;
+  --level1: #bbf7d0;
+  --level2: #4ade80;
+  --level3: #16a34a;
+}
+
+.user-aravind {
+  --level0: #e2e8f0;
+  --level1: #bfdbfe;
+  --level2: #60a5fa;
+  --level3: #2563eb;
+}
+
+.user-max {
+  --level0: #e2e8f0;
+  --level1: #ddd6fe;
+  --level2: #a78bfa;
+  --level3: #7c3aed;
 }

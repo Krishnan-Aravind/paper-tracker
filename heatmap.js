@@ -17,6 +17,19 @@ function startOfGridYear(year) {
   return jan1;
 }
 
+function weekIndexForDate(year, targetDate) {
+  const start = startOfGridYear(year);
+  const utcTarget = new Date(
+    Date.UTC(
+      targetDate.getUTCFullYear(),
+      targetDate.getUTCMonth(),
+      targetDate.getUTCDate()
+    )
+  );
+  const diffDays = Math.floor((utcTarget - start) / (1000 * 60 * 60 * 24));
+  return Math.floor(diffDays / 7);
+}
+
 function levelForCount(count) {
   if (count <= 0) return 0;
   if (count === 1) return 1;
@@ -56,15 +69,51 @@ export function renderHeatmap(gridEl, year, dateCountMap) {
 }
 
 export function computeStats(dateCountMap) {
-  const today = toIsoDate(new Date());
+  const now = new Date();
+  const today = toIsoDate(now);
   let total = 0;
 
   for (const count of Object.values(dateCountMap)) {
     total += count;
   }
 
+  const monday = new Date(now);
+  const day = monday.getDay();
+  const offsetToMonday = (day + 6) % 7;
+  monday.setDate(monday.getDate() - offsetToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  let thisWeek = 0;
+  for (let i = 0; i < 7; i += 1) {
+    const current = new Date(monday);
+    current.setDate(monday.getDate() + i);
+    thisWeek += dateCountMap[toIsoDate(current)] ?? 0;
+  }
+
   return {
     today: dateCountMap[today] ?? 0,
-    total
+    total,
+    thisWeek
   };
+}
+
+export function renderMonthRow(monthRowEl, year) {
+  monthRowEl.innerHTML = "";
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const firstWeekByMonth = new Map();
+
+  for (let month = 0; month < 12; month += 1) {
+    const monthStart = new Date(Date.UTC(year, month, 1));
+    const week = Math.max(0, Math.min(52, weekIndexForDate(year, monthStart)));
+    if (!firstWeekByMonth.has(week)) {
+      firstWeekByMonth.set(week, monthNames[month]);
+    }
+  }
+
+  for (let week = 0; week < 53; week += 1) {
+    const cell = document.createElement("div");
+    cell.className = "month-cell";
+    cell.textContent = firstWeekByMonth.get(week) ?? "";
+    monthRowEl.appendChild(cell);
+  }
 }

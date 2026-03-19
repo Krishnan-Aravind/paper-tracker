@@ -5,7 +5,12 @@ import {
   incrementToday,
   isSupabaseConfigured
 } from "./supabaseClient.js";
-import { computeStats, renderHeatmap, rowsToDateCountMap } from "./heatmap.js";
+import {
+  computeStats,
+  renderHeatmap,
+  renderMonthRow,
+  rowsToDateCountMap
+} from "./heatmap.js";
 
 const els = {
   usersGrid: document.getElementById("usersGrid"),
@@ -27,6 +32,7 @@ function buildUserCard(name, dateCountMap) {
   const card = document.createElement("article");
   card.className = "card user-card";
   card.dataset.user = name;
+  card.classList.add(`user-${name.toLowerCase()}`);
 
   card.innerHTML = `
     <div class="user-card-header">
@@ -45,17 +51,42 @@ function buildUserCard(name, dateCountMap) {
         <p class="value">${stats.today}</p>
       </div>
       <div>
-        <p class="label">Total this year</p>
-        <p class="value">${stats.total}</p>
+        <p class="label">Papers this week</p>
+        <p class="value">${stats.thisWeek}</p>
       </div>
     </div>
-    <div class="grid" aria-label="Reading activity heatmap for ${name}"></div>
+    <div class="heatmap-shell">
+      <div class="weekday-col" aria-hidden="true">
+        <span>M</span>
+        <span>W</span>
+        <span>F</span>
+      </div>
+      <div class="heatmap-scroll">
+        <div class="month-row" aria-hidden="true"></div>
+        <div class="grid" aria-label="Reading activity heatmap for ${name}"></div>
+      </div>
+    </div>
   `;
 
+  const monthRow = card.querySelector(".month-row");
   const grid = card.querySelector(".grid");
+  renderMonthRow(monthRow, state.year);
   renderHeatmap(grid, state.year, dateCountMap);
+  centerOnToday(card);
 
   return card;
+}
+
+function centerOnToday(card) {
+  const scrollEl = card.querySelector(".heatmap-scroll");
+  const todayCell = card.querySelector(".cell.today");
+  if (!scrollEl || !todayCell) {
+    return;
+  }
+
+  const target =
+    todayCell.offsetLeft - scrollEl.clientWidth / 2 + todayCell.clientWidth / 2;
+  scrollEl.scrollLeft = Math.max(0, target);
 }
 
 function renderAllUsers() {
