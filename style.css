@@ -29,14 +29,6 @@ body {
   margin-top: 1rem;
 }
 
-.controls,
-.stats {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
 .label {
   margin: 0;
   color: #475569;
@@ -64,12 +56,20 @@ button:hover {
   background: #0284c7;
 }
 
+.btn-secondary {
+  background: #475569;
+}
+
+.btn-secondary:hover {
+  background: #334155;
+}
+
 button:disabled {
   cursor: wait;
   opacity: 0.7;
 }
 
-.heatmap h2 {
+h2 {
   margin: 0;
   font-size: 1.05rem;
 }
@@ -90,6 +90,41 @@ button:disabled {
   gap: 3px;
   overflow-x: auto;
   padding-bottom: 0.4rem;
+}
+
+.users-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.user-card {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.user-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.user-card-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.user-card-actions button {
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+.user-card-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .cell {

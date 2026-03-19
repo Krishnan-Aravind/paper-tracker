@@ -84,3 +84,37 @@ export async function incrementToday(name) {
 
   return nextCount;
 }
+
+export async function decrementToday(name) {
+  if (!client) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const today = toIsoDate(new Date());
+  const { data: existing, error: readError } = await client
+    .from("entries")
+    .select("id,count")
+    .eq("name", name)
+    .eq("date", today)
+    .maybeSingle();
+
+  if (readError) {
+    throw readError;
+  }
+
+  if (!existing) {
+    return 0;
+  }
+
+  const nextCount = Math.max(0, existing.count - 1);
+  const { error: updateError } = await client
+    .from("entries")
+    .update({ count: nextCount })
+    .eq("id", existing.id);
+
+  if (updateError) {
+    throw updateError;
+  }
+
+  return nextCount;
+}

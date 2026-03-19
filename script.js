@@ -1,80 +1,146 @@
-import { DEFAULT_USER } from "./config.js";
+import { USERS } from "./config.js";
 import {
+  decrementToday,
   fetchUserEntries,
   incrementToday,
-  isSupabaseConfigured,
-  toIsoDate
+  isSupabaseConfigured
 } from "./supabaseClient.js";
 import { computeStats, renderHeatmap, rowsToDateCountMap } from "./heatmap.js";
 
 const els = {
-  userName: document.getElementById("userName"),
-  todayCount: document.getElementById("todayCount"),
-  totalCount: document.getElementById("totalCount"),
-  incrementBtn: document.getElementById("incrementBtn"),
-  heatmapGrid: document.getElementById("heatmapGrid"),
+  usersGrid: document.getElementById("usersGrid"),
   status: document.getElementById("status")
 };
 
 const state = {
   year: new Date().getFullYear(),
-  user: DEFAULT_USER,
-  dateCountMap: {}
+  users: USERS,
+  userData: {}
 };
 
 function setStatus(message) {
   els.status.textContent = message;
 }
 
-function render() {
-  els.userName.textContent = state.user;
-  renderHeatmap(els.heatmapGrid, state.year, state.dateCountMap);
+function buildUserCard(name, dateCountMap) {
+  const stats = computeStats(dateCountMap);
+  const card = document.createElement("article");
+  card.className = "card user-card";
+  card.dataset.user = name;
 
-  const stats = computeStats(state.dateCountMap);
-  els.todayCount.textContent = String(stats.today);
-  els.totalCount.textContent = String(stats.total);
+  card.innerHTML = `
+    <div class="user-card-header">
+      <div>
+        <p class="label">User</p>
+        <p class="value">${name}</p>
+      </div>
+      <div class="user-card-actions">
+        <button type="button" data-action="increment" data-user="${name}">+1 today</button>
+        <button type="button" class="btn-secondary" data-action="decrement" data-user="${name}">-1 today</button>
+      </div>
+    </div>
+    <div class="user-card-stats">
+      <div>
+        <p class="label">Today</p>
+        <p class="value">${stats.today}</p>
+      </div>
+      <div>
+        <p class="label">Total this year</p>
+        <p class="value">${stats.total}</p>
+      </div>
+    </div>
+    <div class="grid" aria-label="Reading activity heatmap for ${name}"></div>
+  `;
+
+  const grid = card.querySelector(".grid");
+  renderHeatmap(grid, state.year, dateCountMap);
+
+  return card;
 }
 
-async function loadData() {
+function renderAllUsers() {
+  els.usersGrid.innerHTML = "";
+  for (const name of state.users) {
+    const map = state.userData[name] ?? {};
+    els.usersGrid.appendChild(buildUserCard(name, map));
+  }
+}
+
+async function loadAllData() {
   if (!isSupabaseConfigured()) {
     setStatus("Set Supabase URL and anon key in config.js to enable persistence.");
-    render();
+    renderAllUsers();
     return;
   }
 
   setStatus("Loading data...");
-  const rows = await fetchUserEntries(state.user, state.year);
-  state.dateCountMap = rowsToDateCountMap(rows);
-  render();
+  const rowsByUser = await Promise.all(
+    state.users.map((name) => fetchUserEntries(name, state.year))
+  );
+  state.userData = {};
+  for (let i = 0; i < state.users.length; i += 1) {
+    state.userData[state.users[i]] = rowsToDateCountMap(rowsByUser[i]);
+  }
+  renderAllUsers();
   setStatus("Ready.");
 }
 
-async function onIncrementClick() {
+function setButtonsDisabled(disabled) {
+  const buttons = els.usersGrid.querySelectorAll("button[data-user]");
+  for (const button of buttons) {
+    button.disabled = disabled;
+  }
+}
+
+async function onUserAction(action, name) {
   if (!isSupabaseConfigured()) {
     setStatus("Supabase not configured yet. Update config.js first.");
     return;
   }
 
-  els.incrementBtn.disabled = true;
+  const validUser = state.users.includes(name);
+  if (!validUser) {
+    setStatus("Unknown user.");
+    return;
+  }
+
+  setButtonsDisabled(true);
   setStatus("Saving...");
   try {
-    const nextCount = await incrementToday(state.user);
-    state.dateCountMap[toIsoDate(new Date())] = nextCount;
-    render();
+    if (action === "increment") {
+      await incrementToday(name);
+    } else if (action === "decrement") {
+      await decrementToday(name);
+    }
+    const rows = await fetchUserEntries(name, state.year);
+    state.userData[name] = rowsToDateCountMap(rows);
+    renderAllUsers();
     setStatus("Saved.");
   } catch (error) {
     setStatus(`Save failed: ${error.message}`);
   } finally {
-    els.incrementBtn.disabled = false;
+    setButtonsDisabled(false);
   }
 }
 
+function attachEvents() {
+  els.usersGrid.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action][data-user]");
+    if (!button) {
+      return;
+    }
+    const action = button.dataset.action;
+    const user = button.dataset.user;
+    onUserAction(action, user);
+  });
+}
+
 async function init() {
-  els.incrementBtn.addEventListener("click", onIncrementClick);
+  attachEvents();
   try {
-    await loadData();
+    await loadAllData();
   } catch (error) {
-    render();
+    renderAllUsers();
     setStatus(`Load failed: ${error.message}`);
   }
 }

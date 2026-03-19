@@ -10,30 +10,11 @@
     <main class="app">
       <header class="topbar">
         <h1>Paper Tracker</h1>
-        <p class="subtitle">Single-user MVP</p>
+        <p class="subtitle">Multi-user phase (Aravind, Andreas, Max)</p>
       </header>
 
-      <section class="controls card">
-        <div>
-          <p class="label">Current user</p>
-          <p id="userName" class="value">-</p>
-        </div>
-        <button id="incrementBtn" type="button">+1 paper today</button>
-      </section>
-
-      <section class="stats card">
-        <div>
-          <p class="label">Today</p>
-          <p id="todayCount" class="value">0</p>
-        </div>
-        <div>
-          <p class="label">Total this year</p>
-          <p id="totalCount" class="value">0</p>
-        </div>
-      </section>
-
-      <section class="heatmap card">
-        <h2>Year Heatmap</h2>
+      <section class="card">
+        <h2>Legend</h2>
         <div class="legend" aria-hidden="true">
           <span>Less</span>
           <i class="cell level0"></i>
@@ -42,8 +23,9 @@
           <i class="cell level3"></i>
           <span>More</span>
         </div>
-        <div id="heatmapGrid" class="grid" aria-label="Reading activity heatmap"></div>
       </section>
+
+      <section id="usersGrid" class="users-grid" aria-label="User cards"></section>
 
       <p id="status" class="status" role="status"></p>
     </main>
