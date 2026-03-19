@@ -3,14 +3,50 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Paper Tracker - Hello</title>
+    <title>Paper Tracker</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main class="container">
-      <h1>Hello from GitLab Pages</h1>
-      <p>If you can see this, deployment is working.</p>
+    <main class="app">
+      <header class="topbar">
+        <h1>Paper Tracker</h1>
+        <p class="subtitle">Single-user MVP</p>
+      </header>
+
+      <section class="controls card">
+        <div>
+          <p class="label">Current user</p>
+          <p id="userName" class="value">-</p>
+        </div>
+        <button id="incrementBtn" type="button">+1 paper today</button>
+      </section>
+
+      <section class="stats card">
+        <div>
+          <p class="label">Today</p>
+          <p id="todayCount" class="value">0</p>
+        </div>
+        <div>
+          <p class="label">Total this year</p>
+          <p id="totalCount" class="value">0</p>
+        </div>
+      </section>
+
+      <section class="heatmap card">
+        <h2>Year Heatmap</h2>
+        <div class="legend" aria-hidden="true">
+          <span>Less</span>
+          <i class="cell level0"></i>
+          <i class="cell level1"></i>
+          <i class="cell level2"></i>
+          <i class="cell level3"></i>
+          <span>More</span>
+        </div>
+        <div id="heatmapGrid" class="grid" aria-label="Reading activity heatmap"></div>
+      </section>
+
+      <p id="status" class="status" role="status"></p>
     </main>
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
   </body>
 </html>
