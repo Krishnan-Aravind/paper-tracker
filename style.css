@@ -69,7 +69,6 @@ button:disabled {
   grid-template-columns: repeat(53, 12px);
   grid-auto-rows: 12px;
   gap: 3px;
-  overflow-x: auto;
   padding-bottom: 0.4rem;
 }
 
@@ -129,7 +128,7 @@ button:disabled {
 }
 
 .heatmap-scroll {
-  overflow-x: auto;
+  overflow: hidden;
   padding-bottom: 0.25rem;
 }
 

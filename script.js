@@ -7,6 +7,7 @@ import {
 } from "./supabaseClient.js";
 import {
   computeStats,
+  currentWeekIndex,
   renderHeatmap,
   renderMonthRow,
   rowsToDateCountMap
@@ -22,6 +23,8 @@ const state = {
   users: USERS,
   userData: {}
 };
+const CELL_SIZE = 12;
+const CELL_GAP = 3;
 
 function setStatus(message) {
   els.status.textContent = message;
@@ -70,29 +73,34 @@ function buildUserCard(name, dateCountMap) {
 
   const monthRow = card.querySelector(".month-row");
   const grid = card.querySelector(".grid");
-  renderMonthRow(monthRow, state.year);
-  renderHeatmap(grid, state.year, dateCountMap);
+  monthRow.innerHTML = "";
+  grid.innerHTML = "";
 
   return card;
 }
 
-function anchorCurrentWeekRight(card) {
+function visibleWeekRange(containerWidth) {
+  const weekWidth = CELL_SIZE + CELL_GAP;
+  const fitted = Math.floor((containerWidth + CELL_GAP) / weekWidth);
+  const weekCount = Math.max(6, Math.min(53, fitted || 0));
+  const currentWeek = currentWeekIndex(state.year);
+  const startWeek = Math.max(0, currentWeek - weekCount + 1);
+  return { startWeek, weekCount };
+}
+
+function renderWindowForCard(card) {
+  const name = card.dataset.user;
+  const dateCountMap = state.userData[name] ?? {};
   const scrollEl = card.querySelector(".heatmap-scroll");
-  const todayCell = card.querySelector(".cell.today");
-  if (!scrollEl || !todayCell) {
+  const monthRow = card.querySelector(".month-row");
+  const grid = card.querySelector(".grid");
+  if (!scrollEl || !monthRow || !grid) {
     return;
   }
 
-  const maxScroll = Math.max(0, scrollEl.scrollWidth - scrollEl.clientWidth);
-  const target =
-    todayCell.offsetLeft - (scrollEl.clientWidth - todayCell.clientWidth);
-
-  if (!Number.isFinite(target)) {
-    scrollEl.scrollLeft = maxScroll;
-    return;
-  }
-
-  scrollEl.scrollLeft = Math.max(0, Math.min(maxScroll, target));
+  const range = visibleWeekRange(scrollEl.clientWidth);
+  renderMonthRow(monthRow, state.year, range);
+  renderHeatmap(grid, state.year, dateCountMap, range);
 }
 
 function renderAllUsers() {
@@ -102,14 +110,12 @@ function renderAllUsers() {
     els.usersGrid.appendChild(buildUserCard(name, map));
   }
 
-  // Wait until cards are mounted and layout is stable before anchoring.
+  // Render visible weeks only after cards are mounted and measurable.
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      const cards = els.usersGrid.querySelectorAll(".user-card");
-      for (const card of cards) {
-        anchorCurrentWeekRight(card);
-      }
-    });
+    const cards = els.usersGrid.querySelectorAll(".user-card");
+    for (const card of cards) {
+      renderWindowForCard(card);
+    }
   });
 }
 
@@ -179,6 +185,13 @@ function attachEvents() {
     const action = button.dataset.action;
     const user = button.dataset.user;
     onUserAction(action, user);
+  });
+
+  window.addEventListener("resize", () => {
+    const cards = els.usersGrid.querySelectorAll(".user-card");
+    for (const card of cards) {
+      renderWindowForCard(card);
+    }
   });
 }
 

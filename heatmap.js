@@ -30,6 +30,10 @@ function weekIndexForDate(year, targetDate) {
   return Math.floor(diffDays / 7);
 }
 
+export function currentWeekIndex(year) {
+  return Math.max(0, Math.min(52, weekIndexForDate(year, new Date())));
+}
+
 function levelForCount(count) {
   if (count <= 0) return 0;
   if (count === 1) return 1;
@@ -43,13 +47,16 @@ function cellDate(startDate, week, day) {
   return date;
 }
 
-export function renderHeatmap(gridEl, year, dateCountMap) {
+export function renderHeatmap(gridEl, year, dateCountMap, range = {}) {
   gridEl.innerHTML = "";
+  const startWeek = range.startWeek ?? 0;
+  const weekCount = range.weekCount ?? 53;
+  gridEl.style.gridTemplateColumns = `repeat(${weekCount}, 12px)`;
 
   const todayIso = toIsoDate(new Date());
   const start = startOfGridYear(year);
 
-  for (let week = 0; week < 53; week += 1) {
+  for (let week = startWeek; week < startWeek + weekCount; week += 1) {
     for (let day = 0; day < 7; day += 1) {
       const dateObj = cellDate(start, week, day);
       const iso = toIsoDate(dateObj);
@@ -97,8 +104,11 @@ export function computeStats(dateCountMap) {
   };
 }
 
-export function renderMonthRow(monthRowEl, year) {
+export function renderMonthRow(monthRowEl, year, range = {}) {
   monthRowEl.innerHTML = "";
+  const startWeek = range.startWeek ?? 0;
+  const weekCount = range.weekCount ?? 53;
+  monthRowEl.style.gridTemplateColumns = `repeat(${weekCount}, 12px)`;
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const firstWeekByMonth = new Map();
 
@@ -110,7 +120,7 @@ export function renderMonthRow(monthRowEl, year) {
     }
   }
 
-  for (let week = 0; week < 53; week += 1) {
+  for (let week = startWeek; week < startWeek + weekCount; week += 1) {
     const cell = document.createElement("div");
     cell.className = "month-cell";
     cell.textContent = firstWeekByMonth.get(week) ?? "";
