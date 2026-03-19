@@ -72,7 +72,6 @@ function buildUserCard(name, dateCountMap) {
   const grid = card.querySelector(".grid");
   renderMonthRow(monthRow, state.year);
   renderHeatmap(grid, state.year, dateCountMap);
-  centerOnToday(card);
 
   return card;
 }
@@ -95,6 +94,14 @@ function renderAllUsers() {
     const map = state.userData[name] ?? {};
     els.usersGrid.appendChild(buildUserCard(name, map));
   }
+
+  // Wait until cards are in the DOM and measured, then center on today's cell.
+  requestAnimationFrame(() => {
+    const cards = els.usersGrid.querySelectorAll(".user-card");
+    for (const card of cards) {
+      centerOnToday(card);
+    }
+  });
 }
 
 async function loadAllData() {
