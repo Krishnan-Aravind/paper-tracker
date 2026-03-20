@@ -54,6 +54,9 @@ export function renderHeatmap(gridEl, year, dateCountMap, range = {}) {
   gridEl.style.gridTemplateColumns = `repeat(${weekCount}, 12px)`;
 
   const todayIso = toIsoDate(new Date());
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayIso = toIsoDate(yesterday);
   const start = startOfGridYear(year);
 
   for (let week = startWeek; week < startWeek + weekCount; week += 1) {
@@ -64,8 +67,14 @@ export function renderHeatmap(gridEl, year, dateCountMap, range = {}) {
 
       const cell = document.createElement("div");
       cell.className = `cell level${levelForCount(count)}`;
+      cell.dataset.date = iso;
       if (iso === todayIso) {
         cell.classList.add("today");
+      }
+      if (iso === todayIso || iso === yesterdayIso) {
+        cell.classList.add("editable");
+      } else {
+        cell.classList.add("locked");
       }
 
       const displayDate = dateObj.toISOString().slice(0, 10);

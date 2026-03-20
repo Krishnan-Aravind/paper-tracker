@@ -153,6 +153,19 @@ button:disabled {
   background: var(--level0);
 }
 
+.cell.editable {
+  cursor: pointer;
+}
+
+.cell.editable:hover {
+  outline: 1px solid #0f172a;
+  outline-offset: 1px;
+}
+
+.cell.locked {
+  cursor: default;
+}
+
 .cell.level0 {
   background: var(--level0);
 }
@@ -179,6 +192,25 @@ button:disabled {
   min-height: 1.2rem;
   color: #334155;
   font-size: 0.9rem;
+}
+
+.leaderboard-card {
+  margin-top: 1rem;
+}
+
+.leaderboard-card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.leaderboard-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #0f172a;
+}
+
+.leaderboard-list li {
+  margin: 0.2rem 0;
 }
 
 .user-andreas {

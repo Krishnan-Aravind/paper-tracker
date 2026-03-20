@@ -1,7 +1,9 @@
 import { USERS } from "./config.js";
 import {
+  decrementDate,
   decrementToday,
   fetchUserEntries,
+  incrementDate,
   incrementToday,
   isSupabaseConfigured
 } from "./supabaseClient.js";
@@ -14,6 +16,8 @@ import {
 } from "./heatmap.js";
 
 const els = {
+  leaderboardList: document.getElementById("leaderboardList"),
+  leaderboardMonth: document.getElementById("leaderboardMonth"),
   usersGrid: document.getElementById("usersGrid"),
   status: document.getElementById("status")
 };
@@ -21,13 +25,88 @@ const els = {
 const state = {
   year: new Date().getFullYear(),
   users: USERS,
-  userData: {}
+  userData: {},
+  isSaving: false
 };
 const CELL_SIZE = 12;
 const CELL_GAP = 3;
 
 function setStatus(message) {
   els.status.textContent = message;
+}
+
+function weeklyPoints(weekCount) {
+  if (weekCount >= 5) return 1;
+  if (weekCount >= 3) return 0;
+  return -1;
+}
+
+function toUtcIsoDate(dateObj) {
+  return dateObj.toISOString().slice(0, 10);
+}
+
+function startOfUtcWeek(dateObj) {
+  const d = new Date(Date.UTC(
+    dateObj.getUTCFullYear(),
+    dateObj.getUTCMonth(),
+    dateObj.getUTCDate()
+  ));
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+  return d;
+}
+
+function monthlyLeaderboardRows(userData) {
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
+
+  const rows = state.users.map((name) => {
+    const dateCountMap = userData[name] ?? {};
+    const weeklyCounts = new Map();
+
+    const cursor = new Date(monthStart);
+    while (cursor <= monthEnd) {
+      const iso = toUtcIsoDate(cursor);
+      const count = dateCountMap[iso] ?? 0;
+      const weekStartIso = toUtcIsoDate(startOfUtcWeek(cursor));
+      weeklyCounts.set(weekStartIso, (weeklyCounts.get(weekStartIso) ?? 0) + count);
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+
+    let points = 0;
+    for (const weekCount of weeklyCounts.values()) {
+      points += weeklyPoints(weekCount);
+    }
+
+    return { name, points };
+  });
+
+  rows.sort((a, b) => {
+    if (b.points !== a.points) {
+      return b.points - a.points;
+    }
+    return a.name.localeCompare(b.name);
+  });
+  return rows;
+}
+
+function renderLeaderboard() {
+  if (!els.leaderboardList || !els.leaderboardMonth) {
+    return;
+  }
+  const monthLabel = new Date().toLocaleString(undefined, {
+    month: "long",
+    year: "numeric"
+  });
+  els.leaderboardMonth.textContent = monthLabel;
+
+  const rows = monthlyLeaderboardRows(state.userData);
+  els.leaderboardList.innerHTML = "";
+  for (let i = 0; i < rows.length; i += 1) {
+    const li = document.createElement("li");
+    li.textContent = `${i + 1}. ${rows[i].name} - ${rows[i].points} pts`;
+    els.leaderboardList.appendChild(li);
+  }
 }
 
 function buildUserCard(name, dateCountMap) {
@@ -117,6 +196,7 @@ function renderAllUsers() {
       renderWindowForCard(card);
     }
   });
+  renderLeaderboard();
 }
 
 async function loadAllData() {
@@ -145,6 +225,47 @@ function setButtonsDisabled(disabled) {
   }
 }
 
+function isEditableIsoDate(isoDate) {
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const todayIso = toUtcIsoDate(today);
+  const yesterdayIso = toUtcIsoDate(yesterday);
+  return isoDate === todayIso || isoDate === yesterdayIso;
+}
+
+async function onDateAction(action, name, isoDate) {
+  if (!isSupabaseConfigured()) {
+    setStatus("Supabase not configured yet. Update config.js first.");
+    return;
+  }
+  if (!isEditableIsoDate(isoDate)) {
+    return;
+  }
+  if (state.isSaving) {
+    return;
+  }
+  state.isSaving = true;
+  setButtonsDisabled(true);
+  setStatus("Saving...");
+  try {
+    if (action === "increment") {
+      await incrementDate(name, isoDate);
+    } else if (action === "decrement") {
+      await decrementDate(name, isoDate);
+    }
+    const rows = await fetchUserEntries(name, state.year);
+    state.userData[name] = rowsToDateCountMap(rows);
+    renderAllUsers();
+    setStatus("");
+  } catch (error) {
+    setStatus(`Save failed: ${error.message}`);
+  } finally {
+    setButtonsDisabled(false);
+    state.isSaving = false;
+  }
+}
+
 async function onUserAction(action, name) {
   if (!isSupabaseConfigured()) {
     setStatus("Supabase not configured yet. Update config.js first.");
@@ -156,7 +277,11 @@ async function onUserAction(action, name) {
     setStatus("Unknown user.");
     return;
   }
+  if (state.isSaving) {
+    return;
+  }
 
+  state.isSaving = true;
   setButtonsDisabled(true);
   setStatus("Saving...");
   try {
@@ -168,23 +293,37 @@ async function onUserAction(action, name) {
     const rows = await fetchUserEntries(name, state.year);
     state.userData[name] = rowsToDateCountMap(rows);
     renderAllUsers();
-    setStatus("Saved.");
+    setStatus("");
   } catch (error) {
     setStatus(`Save failed: ${error.message}`);
   } finally {
     setButtonsDisabled(false);
+    state.isSaving = false;
   }
 }
 
 function attachEvents() {
   els.usersGrid.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-action][data-user]");
-    if (!button) {
+    if (button) {
+      const action = button.dataset.action;
+      const user = button.dataset.user;
+      onUserAction(action, user);
       return;
     }
-    const action = button.dataset.action;
-    const user = button.dataset.user;
-    onUserAction(action, user);
+
+    const cell = event.target.closest(".cell[data-date]");
+    if (!cell || !cell.classList.contains("editable")) {
+      return;
+    }
+    const card = cell.closest(".user-card");
+    if (!card) {
+      return;
+    }
+    const user = card.dataset.user;
+    const isoDate = cell.dataset.date;
+    const action = event.shiftKey ? "decrement" : "increment";
+    onDateAction(action, user, isoDate);
   });
 
   window.addEventListener("resize", () => {

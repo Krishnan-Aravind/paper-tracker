@@ -45,17 +45,25 @@ export async function fetchUserEntries(name, year) {
 }
 
 export async function incrementToday(name) {
+  const today = toIsoDate(new Date());
+  return incrementDate(name, today);
+}
+
+export async function decrementToday(name) {
+  const today = toIsoDate(new Date());
+  return decrementDate(name, today);
+}
+
+export async function incrementDate(name, isoDate) {
   if (!client) {
     throw new Error("Supabase is not configured.");
   }
-
-  const today = toIsoDate(new Date());
 
   const { data: existing, error: readError } = await client
     .from("entries")
     .select("id,count")
     .eq("name", name)
-    .eq("date", today)
+    .eq("date", isoDate)
     .maybeSingle();
 
   if (readError) {
@@ -65,7 +73,7 @@ export async function incrementToday(name) {
   if (!existing) {
     const { error: insertError } = await client
       .from("entries")
-      .insert({ name, date: today, count: 1 });
+      .insert({ name, date: isoDate, count: 1 });
     if (insertError) {
       throw insertError;
     }
@@ -85,17 +93,16 @@ export async function incrementToday(name) {
   return nextCount;
 }
 
-export async function decrementToday(name) {
+export async function decrementDate(name, isoDate) {
   if (!client) {
     throw new Error("Supabase is not configured.");
   }
 
-  const today = toIsoDate(new Date());
   const { data: existing, error: readError } = await client
     .from("entries")
     .select("id,count")
     .eq("name", name)
-    .eq("date", today)
+    .eq("date", isoDate)
     .maybeSingle();
 
   if (readError) {
