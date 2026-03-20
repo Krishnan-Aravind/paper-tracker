@@ -42,6 +42,12 @@ function weeklyPoints(weekCount) {
   return -1;
 }
 
+function pointsToneClass(points) {
+  if (points > 0) return "points-positive";
+  if (points < 0) return "points-negative";
+  return "points-neutral";
+}
+
 function toUtcIsoDate(dateObj) {
   return dateObj.toISOString().slice(0, 10);
 }
@@ -105,13 +111,22 @@ function renderLeaderboard() {
   els.leaderboardList.innerHTML = "";
   for (let i = 0; i < rows.length; i += 1) {
     const li = document.createElement("li");
-    li.textContent = `${rows[i].name}: ${rows[i].points} pts`;
+    li.className = "leaderboard-item";
+    const name = document.createElement("span");
+    name.className = "leaderboard-name";
+    name.textContent = rows[i].name;
+    const points = document.createElement("span");
+    points.className = `points-badge ${pointsToneClass(rows[i].points)}`;
+    points.textContent = `${rows[i].points} pts`;
+    li.appendChild(name);
+    li.appendChild(points);
     els.leaderboardList.appendChild(li);
   }
 }
 
 function buildUserCard(name, dateCountMap) {
   const stats = computeStats(dateCountMap);
+  const thisWeekPoints = weeklyPoints(stats.thisWeek);
   const card = document.createElement("article");
   card.className = "card user-card";
   card.dataset.user = name;
@@ -136,6 +151,10 @@ function buildUserCard(name, dateCountMap) {
       <div>
         <p class="label">Papers this week</p>
         <p class="value">${stats.thisWeek}</p>
+      </div>
+      <div>
+        <p class="label">This week points</p>
+        <p class="value"><span class="points-badge ${pointsToneClass(thisWeekPoints)}">${thisWeekPoints} pts</span></p>
       </div>
     </div>
     <div class="heatmap-shell">
