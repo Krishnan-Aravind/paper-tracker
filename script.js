@@ -26,7 +26,14 @@ const state = {
   year: new Date().getFullYear(),
   users: USERS,
   userData: {},
-  isSaving: false
+  isSaving: false,
+  touchGesture: {
+    timerId: null,
+    consumedLongPress: false,
+    isoDate: null,
+    user: null
+  },
+  suppressNextClick: false
 };
 const CELL_SIZE = 12;
 const CELL_GAP = 3;
@@ -327,6 +334,10 @@ async function onUserAction(action, name) {
 
 function attachEvents() {
   els.usersGrid.addEventListener("click", (event) => {
+    if (state.suppressNextClick) {
+      state.suppressNextClick = false;
+      return;
+    }
     const button = event.target.closest("button[data-action][data-user]");
     if (button) {
       const action = button.dataset.action;
@@ -348,6 +359,47 @@ function attachEvents() {
     const action = event.shiftKey ? "decrement" : "increment";
     onDateAction(action, user, isoDate);
   });
+
+  els.usersGrid.addEventListener("touchstart", (event) => {
+    const cell = event.target.closest(".cell[data-date].editable");
+    if (!cell) {
+      return;
+    }
+    const card = cell.closest(".user-card");
+    if (!card) {
+      return;
+    }
+    state.touchGesture.consumedLongPress = false;
+    state.touchGesture.isoDate = cell.dataset.date;
+    state.touchGesture.user = card.dataset.user;
+    clearTimeout(state.touchGesture.timerId);
+    state.touchGesture.timerId = setTimeout(() => {
+      state.touchGesture.consumedLongPress = true;
+      state.suppressNextClick = true;
+      onDateAction("decrement", state.touchGesture.user, state.touchGesture.isoDate);
+    }, 450);
+  }, { passive: true });
+
+  els.usersGrid.addEventListener("touchend", () => {
+    clearTimeout(state.touchGesture.timerId);
+    if (!state.touchGesture.isoDate || !state.touchGesture.user) {
+      return;
+    }
+    if (!state.touchGesture.consumedLongPress) {
+      state.suppressNextClick = true;
+      onDateAction("increment", state.touchGesture.user, state.touchGesture.isoDate);
+    }
+    state.touchGesture.isoDate = null;
+    state.touchGesture.user = null;
+    state.touchGesture.consumedLongPress = false;
+  }, { passive: true });
+
+  els.usersGrid.addEventListener("touchcancel", () => {
+    clearTimeout(state.touchGesture.timerId);
+    state.touchGesture.isoDate = null;
+    state.touchGesture.user = null;
+    state.touchGesture.consumedLongPress = false;
+  }, { passive: true });
 
   window.addEventListener("resize", () => {
     const cards = els.usersGrid.querySelectorAll(".user-card");

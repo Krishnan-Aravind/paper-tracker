@@ -20,8 +20,8 @@ This is a quick guide for lab members using the tracker.
 - You can edit only:
   - **today**
   - **yesterday**
-- Click a cell to increment (`+1`).
-- Shift+click a cell to decrement (`-1`).
+- Click/press a cell to increment (`+1`).
+- Shift+click (desktop) or long press (mobile) to decrement (`-1`).
 - Older dates are locked and cannot be edited.
 
 ## Heatmap basics
@@ -44,5 +44,5 @@ Important: for weeks that cross month boundaries, only days in the current month
 ## Tips
 
 - Update daily to keep your streak realistic.
-- Use click for quick updates while reviewing yesterday's log.
+- Use click/press for quick updates while reviewing yesterday's log.
 - If something looks wrong, refresh the page and try again.
