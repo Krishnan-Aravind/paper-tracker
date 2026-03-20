@@ -36,9 +36,10 @@ function setStatus(message) {
 }
 
 function weeklyPoints(weekCount) {
-  if (weekCount === 0) return 0;
-  if (weekCount >= 5) return 1;
-  if (weekCount >= 3) return 0;
+  const n = Number(weekCount) || 0;
+  if (n === 0) return 0;
+  if (n >= 5) return 1;
+  if (n >= 3) return 0;
   return -1;
 }
 
@@ -74,7 +75,7 @@ function monthlyLeaderboardRows(userData) {
     const cursor = new Date(monthStart);
     while (cursor <= monthEnd) {
       const iso = toUtcIsoDate(cursor);
-      const count = dateCountMap[iso] ?? 0;
+      const count = Number(dateCountMap[iso] ?? 0) || 0;
       const weekStartIso = toUtcIsoDate(startOfUtcWeek(cursor));
       weeklyCounts.set(weekStartIso, (weeklyCounts.get(weekStartIso) ?? 0) + count);
       cursor.setUTCDate(cursor.getUTCDate() + 1);
