@@ -36,6 +36,7 @@ function setStatus(message) {
 }
 
 function weeklyPoints(weekCount) {
+  if (weekCount === 0) return 0;
   if (weekCount >= 5) return 1;
   if (weekCount >= 3) return 0;
   return -1;
@@ -104,7 +105,7 @@ function renderLeaderboard() {
   els.leaderboardList.innerHTML = "";
   for (let i = 0; i < rows.length; i += 1) {
     const li = document.createElement("li");
-    li.textContent = `${i + 1}. ${rows[i].name} - ${rows[i].points} pts`;
+    li.textContent = `${rows[i].name}: ${rows[i].points} pts`;
     els.leaderboardList.appendChild(li);
   }
 }
