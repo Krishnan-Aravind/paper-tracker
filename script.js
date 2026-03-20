@@ -37,10 +37,10 @@ function setStatus(message) {
 
 function weeklyPoints(weekCount) {
   const n = Number(weekCount) || 0;
-  if (n === 0) return 0;
-  if (n >= 5) return 1;
-  if (n >= 3) return 0;
-  return -1;
+  if (n >= 5) return 2;
+  if (n >= 3) return 1;
+  if (n >= 1) return -1;
+  return -2;
 }
 
 function pointsToneClass(points) {
@@ -67,13 +67,15 @@ function monthlyLeaderboardRows(userData) {
   const now = new Date();
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
+  const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const scoringEnd = monthEnd < todayUtc ? monthEnd : todayUtc;
 
   const rows = state.users.map((name) => {
     const dateCountMap = userData[name] ?? {};
     const weeklyCounts = new Map();
 
     const cursor = new Date(monthStart);
-    while (cursor <= monthEnd) {
+    while (cursor <= scoringEnd) {
       const iso = toUtcIsoDate(cursor);
       const count = Number(dateCountMap[iso] ?? 0) || 0;
       const weekStartIso = toUtcIsoDate(startOfUtcWeek(cursor));
