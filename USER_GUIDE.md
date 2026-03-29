@@ -2,6 +2,10 @@
 
 This is a quick guide for lab members using the tracker.
 
+## Reading papers
+
+Read a paper = [have paper notes](https://www.cs.jhu.edu/~jason/advice/how-to-read-a-paper.html)
+
 ## What this site does
 
 - Tracks how many papers each person reads per day.
