@@ -2,6 +2,19 @@ export function toIsoDate(dateObj) {
   return dateObj.toISOString().slice(0, 10);
 }
 
+/** Sunday 00:00 UTC for the UTC week containing dateObj (matches monthly leaderboard week buckets). */
+function startOfUtcWeek(dateObj) {
+  const d = new Date(
+    Date.UTC(
+      dateObj.getUTCFullYear(),
+      dateObj.getUTCMonth(),
+      dateObj.getUTCDate()
+    )
+  );
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+  return d;
+}
+
 export function rowsToDateCountMap(rows) {
   const map = {};
   for (const row of rows) {
@@ -93,17 +106,15 @@ export function computeStats(dateCountMap) {
     total += count;
   }
 
-  const monday = new Date(now);
-  const day = monday.getDay();
-  const offsetToMonday = (day + 6) % 7;
-  monday.setDate(monday.getDate() - offsetToMonday);
-  monday.setHours(0, 0, 0, 0);
+  const weekStart = startOfUtcWeek(now);
+  const y = weekStart.getUTCFullYear();
+  const m = weekStart.getUTCMonth();
+  const day = weekStart.getUTCDate();
 
   let thisWeek = 0;
   for (let i = 0; i < 7; i += 1) {
-    const current = new Date(monday);
-    current.setDate(monday.getDate() + i);
-    thisWeek += dateCountMap[toIsoDate(current)] ?? 0;
+    const d = new Date(Date.UTC(y, m, day + i));
+    thisWeek += dateCountMap[toIsoDate(d)] ?? 0;
   }
 
   return {
