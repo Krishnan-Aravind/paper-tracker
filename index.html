@@ -12,6 +12,15 @@
         <h1>LSV paper tracker - May the best nerd win</h1>
       </header>
 
+      <section class="card leaderboard-card" aria-label="Monthly leaderboard">
+        <h2>Leaderboard (<span id="leaderboardMonth"></span>)</h2>
+        <ol id="leaderboardList" class="leaderboard-list"></ol>
+      </section>
+
+      <section id="usersGrid" class="users-grid" aria-label="User cards"></section>
+
+      <p id="status" class="status" role="status"></p>
+
       <section class="card user-guide-card" aria-label="User guide">
         <h2>User Guide</h2>
         <ul class="user-guide-list">
@@ -24,15 +33,6 @@
           <li>Leaderboard is monthly; weekly points for reading papers: &gt;=5 (+2), 3-4 (+1), 1-2 (-1), 0 (-2)</li>
         </ul>
       </section>
-
-      <section class="card leaderboard-card" aria-label="Monthly leaderboard">
-        <h2>Leaderboard (<span id="leaderboardMonth"></span>)</h2>
-        <ol id="leaderboardList" class="leaderboard-list"></ol>
-      </section>
-
-      <section id="usersGrid" class="users-grid" aria-label="User cards"></section>
-
-      <p id="status" class="status" role="status"></p>
     </main>
     <script type="module" src="script.js"></script>
   </body>

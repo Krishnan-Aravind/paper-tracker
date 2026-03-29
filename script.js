@@ -245,7 +245,7 @@ async function loadAllData() {
     state.userData[state.users[i]] = rowsToDateCountMap(rowsByUser[i]);
   }
   renderAllUsers();
-  setStatus("Ready.");
+  setStatus("");
 }
 
 function setButtonsDisabled(disabled) {
