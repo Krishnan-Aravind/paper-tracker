@@ -2,10 +2,12 @@ import { USERS } from "./config.js";
 import {
   decrementDate,
   decrementToday,
+  fetchMonthlyHistory,
   fetchUserEntries,
   incrementDate,
   incrementToday,
-  isSupabaseConfigured
+  isSupabaseConfigured,
+  replaceMonthlyHistory
 } from "./supabaseClient.js";
 import {
   computeStats,
@@ -16,6 +18,9 @@ import {
 } from "./heatmap.js";
 
 const els = {
+  historyEmpty: document.getElementById("historyEmpty"),
+  historyList: document.getElementById("historyList"),
+  historyMonth: document.getElementById("historyMonth"),
   leaderboardList: document.getElementById("leaderboardList"),
   leaderboardMonth: document.getElementById("leaderboardMonth"),
   usersGrid: document.getElementById("usersGrid"),
@@ -26,6 +31,12 @@ const state = {
   year: new Date().getFullYear(),
   users: USERS,
   userData: {},
+  history: {
+    monthKey: "",
+    monthLabel: "",
+    rows: []
+  },
+  historySourceUserData: {},
   isSaving: false,
   touchGesture: {
     timerId: null,
@@ -48,6 +59,28 @@ function weeklyPoints(weekCount) {
   if (n >= 3) return 1;
   if (n >= 1) return -1;
   return -2;
+}
+
+function toUtcDateOnly(dateObj) {
+  return new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate()));
+}
+
+function monthKeyFromDate(dateObj) {
+  const month = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
+  return `${dateObj.getUTCFullYear()}-${month}`;
+}
+
+function previousMonthInfo(baseDate = new Date()) {
+  const base = toUtcDateOnly(baseDate);
+  const start = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() - 1, 1));
+  const end = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 0));
+  return {
+    monthKey: monthKeyFromDate(start),
+    start,
+    end,
+    year: start.getUTCFullYear(),
+    monthLabel: start.toLocaleString(undefined, { month: "long", year: "numeric", timeZone: "UTC" })
+  };
 }
 
 function pointsToneClass(points) {
@@ -107,6 +140,38 @@ function monthlyLeaderboardRows(userData) {
   return rows;
 }
 
+function monthlySummaryRowsForRange(userData, rangeStart, rangeEnd) {
+  const rows = state.users.map((name) => {
+    const dateCountMap = userData[name] ?? {};
+    const weeklyCounts = new Map();
+    let papersRead = 0;
+
+    const cursor = new Date(rangeStart);
+    while (cursor <= rangeEnd) {
+      const iso = toUtcIsoDate(cursor);
+      const count = Number(dateCountMap[iso] ?? 0) || 0;
+      papersRead += count;
+      const weekStartIso = toUtcIsoDate(startOfUtcWeek(cursor));
+      weeklyCounts.set(weekStartIso, (weeklyCounts.get(weekStartIso) ?? 0) + count);
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+
+    let points = 0;
+    for (const weekCount of weeklyCounts.values()) {
+      points += weeklyPoints(weekCount);
+    }
+    return { name, papers_read: papersRead, points };
+  });
+
+  rows.sort((a, b) => {
+    if (b.points !== a.points) {
+      return b.points - a.points;
+    }
+    return a.name.localeCompare(b.name);
+  });
+  return rows;
+}
+
 function renderLeaderboard() {
   if (!els.leaderboardList || !els.leaderboardMonth) {
     return;
@@ -131,6 +196,42 @@ function renderLeaderboard() {
     li.appendChild(name);
     li.appendChild(points);
     els.leaderboardList.appendChild(li);
+  }
+}
+
+function renderHistory() {
+  if (!els.historyList || !els.historyEmpty || !els.historyMonth) {
+    return;
+  }
+  els.historyMonth.textContent = state.history.monthLabel
+    ? `Last month: ${state.history.monthLabel}`
+    : "";
+  els.historyList.innerHTML = "";
+
+  const rows = state.history.rows ?? [];
+  if (!rows.length) {
+    els.historyEmpty.hidden = false;
+    return;
+  }
+
+  els.historyEmpty.hidden = true;
+  const pointsValues = rows.map((row) => Number(row.points) || 0);
+  const maxPoints = Math.max(...pointsValues);
+  const minPoints = Math.min(...pointsValues);
+  const allEqual = maxPoints === minPoints;
+
+  for (const row of rows) {
+    const li = document.createElement("li");
+    const points = Number(row.points) || 0;
+    const papersRead = Number(row.papers_read) || 0;
+    let marker = "";
+    if (!allEqual && points === maxPoints) {
+      marker = "👑 ";
+    } else if (!allEqual && points === minPoints) {
+      marker = "🍰 ";
+    }
+    li.textContent = `${marker}${row.name} - ${papersRead} papers - ${points} pts`;
+    els.historyList.appendChild(li);
   }
 }
 
@@ -227,6 +328,55 @@ function renderAllUsers() {
     }
   });
   renderLeaderboard();
+  renderHistory();
+}
+
+async function fetchUsersDataForYear(year) {
+  const rowsByUser = await Promise.all(
+    state.users.map((name) => fetchUserEntries(name, year))
+  );
+  const userData = {};
+  for (let i = 0; i < state.users.length; i += 1) {
+    userData[state.users[i]] = rowsToDateCountMap(rowsByUser[i]);
+  }
+  return userData;
+}
+
+function isSameMonthKey(isoDate, monthKey) {
+  return typeof isoDate === "string" && isoDate.slice(0, 7) === monthKey;
+}
+
+async function refreshLastMonthHistory(forceRecompute = false) {
+  if (!isSupabaseConfigured()) {
+    state.history = { monthKey: "", monthLabel: "", rows: [] };
+    return;
+  }
+  const monthInfo = previousMonthInfo();
+  state.history.monthKey = monthInfo.monthKey;
+  state.history.monthLabel = monthInfo.monthLabel;
+
+  state.historySourceUserData = await fetchUsersDataForYear(monthInfo.year);
+  const computedRows = monthlySummaryRowsForRange(
+    state.historySourceUserData,
+    monthInfo.start,
+    monthInfo.end
+  );
+  const hasActivity = computedRows.some((row) => row.papers_read > 0);
+
+  let rows = await fetchMonthlyHistory(monthInfo.monthKey);
+  if (forceRecompute) {
+    await replaceMonthlyHistory(monthInfo.monthKey, hasActivity ? computedRows : []);
+    rows = await fetchMonthlyHistory(monthInfo.monthKey);
+  } else if (!rows.length && hasActivity) {
+    await replaceMonthlyHistory(monthInfo.monthKey, computedRows);
+    rows = await fetchMonthlyHistory(monthInfo.monthKey);
+  }
+
+  state.history.rows = rows.map((row) => ({
+    name: row.name,
+    papers_read: Number(row.papers_read) || 0,
+    points: Number(row.points) || 0
+  }));
 }
 
 async function loadAllData() {
@@ -237,13 +387,8 @@ async function loadAllData() {
   }
 
   setStatus("Loading data...");
-  const rowsByUser = await Promise.all(
-    state.users.map((name) => fetchUserEntries(name, state.year))
-  );
-  state.userData = {};
-  for (let i = 0; i < state.users.length; i += 1) {
-    state.userData[state.users[i]] = rowsToDateCountMap(rowsByUser[i]);
-  }
+  state.userData = await fetchUsersDataForYear(state.year);
+  await refreshLastMonthHistory(false);
   renderAllUsers();
   setStatus("");
 }
@@ -286,6 +431,10 @@ async function onDateAction(action, name, isoDate) {
     }
     const rows = await fetchUserEntries(name, state.year);
     state.userData[name] = rowsToDateCountMap(rows);
+    const prevMonth = previousMonthInfo();
+    if (isSameMonthKey(isoDate, prevMonth.monthKey)) {
+      await refreshLastMonthHistory(true);
+    }
     renderAllUsers();
     setStatus("");
   } catch (error) {
@@ -322,6 +471,11 @@ async function onUserAction(action, name) {
     }
     const rows = await fetchUserEntries(name, state.year);
     state.userData[name] = rowsToDateCountMap(rows);
+    const todayIso = toUtcIsoDate(new Date());
+    const prevMonth = previousMonthInfo();
+    if (isSameMonthKey(todayIso, prevMonth.monthKey)) {
+      await refreshLastMonthHistory(true);
+    }
     renderAllUsers();
     setStatus("");
   } catch (error) {

@@ -267,6 +267,40 @@ button:disabled {
   color: #991b1b;
 }
 
+.history-card {
+  margin-top: 1rem;
+}
+
+.history-dropdown {
+  font-size: 0.95rem;
+}
+
+.history-summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.history-month {
+  margin: 0.5rem 0 0.2rem;
+  color: #475569;
+  font-size: 0.86rem;
+}
+
+.history-list {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.history-list li {
+  margin: 0.35rem 0;
+}
+
+.history-empty {
+  margin: 0.5rem 0 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
 .user-andreas {
   --level0: #e2e8f0;
   --level1: #bbf7d0;

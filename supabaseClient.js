@@ -125,3 +125,51 @@ export async function decrementDate(name, isoDate) {
 
   return nextCount;
 }
+
+export async function fetchMonthlyHistory(monthKey) {
+  if (!client) {
+    return [];
+  }
+
+  const { data, error } = await client
+    .from("monthly_history")
+    .select("month_key,name,papers_read,points,captured_at")
+    .eq("month_key", monthKey)
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+  return data ?? [];
+}
+
+export async function replaceMonthlyHistory(monthKey, rows) {
+  if (!client) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const { error: deleteError } = await client
+    .from("monthly_history")
+    .delete()
+    .eq("month_key", monthKey);
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  if (!rows.length) {
+    return;
+  }
+
+  const payload = rows.map((row) => ({
+    month_key: monthKey,
+    name: row.name,
+    papers_read: row.papers_read,
+    points: row.points
+  }));
+  const { error: insertError } = await client
+    .from("monthly_history")
+    .insert(payload);
+  if (insertError) {
+    throw insertError;
+  }
+}
