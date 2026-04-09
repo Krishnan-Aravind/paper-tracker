@@ -321,3 +321,17 @@ button:disabled {
   --level2: #a78bfa;
   --level3: #7c3aed;
 }
+
+.user-pushkar {
+  --level0: #e2e8f0;
+  --level1: #fecdd3;
+  --level2: #fb7185;
+  --level3: #e11d48;
+}
+
+.user-janaki {
+  --level0: #e2e8f0;
+  --level1: #fde68a;
+  --level2: #f59e0b;
+  --level3: #b45309;
+}
