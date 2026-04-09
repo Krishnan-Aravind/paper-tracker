@@ -57,6 +57,7 @@ function weeklyPoints(weekCount) {
   const n = Number(weekCount) || 0;
   if (n >= 5) return 2;
   if (n >= 3) return 1;
+  if (n >= 2) return 0;
   if (n >= 1) return -1;
   return -2;
 }
@@ -225,9 +226,7 @@ function renderHistory() {
     const points = Number(row.points) || 0;
     const papersRead = Number(row.papers_read) || 0;
     let marker = "";
-    if (!allEqual && points === maxPoints) {
-      marker = "👑 ";
-    } else if (!allEqual && points === minPoints) {
+    if (!allEqual && points === minPoints) {
       marker = "🍰 ";
     }
     li.textContent = `${marker}${row.name} - ${papersRead} papers - ${points} pts`;
