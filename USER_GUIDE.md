@@ -38,11 +38,13 @@ Read a paper = [have paper notes](https://www.cs.jhu.edu/~jason/advice/how-to-re
 
 The leaderboard resets every month and scores by **week performance**:
 
-- Weekly total `>= 5` papers: `+2` points
-- Weekly total `3-4` papers: `+1` point
-- Weekly total `2` papers: `0` points
-- Weekly total `1` paper: `-1` point
-- Weekly total `0` papers: `-2` points
+- Weekly total `0` papers: `-1` point
+- Weekly total `1` paper: `0` points
+- Weekly total `2` papers: `+1` point
+- Weekly total `3` papers: `+2` points
+- Weekly total `4` papers: `+3` points
+- Weekly total `5` papers: `+4` points
+- Weekly total `6+` papers: `+5` points
 
 Important: for weeks that cross month boundaries, only days in the current month are counted.
 
